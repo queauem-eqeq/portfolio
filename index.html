@@ -124,10 +124,23 @@ button.zoom:focus-visible{outline:2px solid var(--accent);outline-offset:-4px}
 .corps{display:grid;gap:1em;max-width:62ch;padding-bottom:40px;margin-left:auto;margin-right:0}
 .corps p{margin:0}.corps ul{margin:0;padding-left:1.1em;display:grid;gap:.5em}
 @media (min-width:900px){.corps{margin-left:calc(100%/12*1)}}
-.gallery{column-count:2;column-gap:clamp(8px,1.2vw,18px);max-width:1180px;margin-inline:auto}
-.gallery figure{margin:0 0 clamp(8px,1.2vw,18px);position:relative;overflow:hidden;background:var(--ph-a);break-inside:avoid}
+.gallery,.tiles{display:flex;flex-wrap:wrap;gap:0;margin:0;padding:0}
+.gallery::after,.tiles::after{content:"";flex:1000000 1 0}
+.gallery figure{margin:0;position:relative;overflow:hidden;background:var(--ph-a)}
 .gallery figure.wide,.gallery figure.tall{aspect-ratio:auto}
-@media (max-width:640px){.gallery{column-count:1}}
+.gallery .gimg,.tiles .gimg{display:block;width:100%;height:auto}
+.tile{position:relative;display:block;overflow:hidden;text-decoration:none;background:var(--ph-a);margin:0}
+.tile .cap{position:absolute;left:0;right:0;bottom:0;z-index:2;padding:48px 16px 16px;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.72));display:grid;gap:2px;opacity:0;transition:opacity .3s}
+.tile:hover .cap,.tile:focus-visible .cap{opacity:1}
+@media (hover:none){.tile .cap{opacity:1}}
+.tile .cap b{font-family:var(--f-display);font-weight:var(--d-weight);letter-spacing:var(--d-track);text-transform:var(--d-case);font-size:var(--step-1);line-height:1}
+.tile .cap span{font-family:var(--f-util);font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;opacity:.85}
+.tile .tph{aspect-ratio:3/2;display:block;width:100%;background:linear-gradient(160deg,var(--ph-a),var(--ph-b))}
+.fiche header.c{text-align:center;justify-items:center;border-bottom:0;padding-bottom:16px}
+.fiche .intro.c{display:block;text-align:center;max-width:62ch;margin-inline:auto;padding-block:8px 40px}
+.fiche .intro.c p{max-width:none;font-size:var(--step-0,1rem)}
+.fiche .intro.c .facts{justify-content:center;margin-top:16px;display:inline-grid;text-align:left}
+.fiche .gallery{margin-inline:calc(50% - 50vw);width:100vw}
 .pager{display:flex;justify-content:space-between;gap:16px;padding-block:40px;border-top:1px solid var(--line);margin-top:40px}
 .pager a{text-decoration:none;display:grid;gap:4px;min-width:0}
 .pager a:last-child{text-align:right}
@@ -275,6 +288,7 @@ function zoomBtn(alt){ return `<button class="zoom" type="button" aria-label="Ag
 
 /* Liste d'une rubrique */
 const liste=document.getElementById("liste"), fiche=document.getElementById("fiche");
+const TILEH = innerWidth<700 ? 180 : 260;
 function renderRubrique(key){
   const R=DATA[key];
   const items=R.items;
@@ -285,24 +299,11 @@ function renderRubrique(key){
     <p class="lede">${T(R.lede)}</p>
     <div class="meta"><span class="util">${items.length} pages</span><span class="util">${nImg} photos dans cette version</span></div>
   </section>
-  <nav class="index wrap" aria-label="Sommaire de la rubrique"><ol>` +
-  items.map(s=>`<li><a href="#${key}/${s.id}"><span class="util">${T(s.date)}</span><span class="t">${esc(s.titre)}</span><span class="util g">${T(s.interv)}</span></a></li>`).join("") +
-  `</ol></nav><div>` +
+  <div class="tiles">` +
   items.map((s,i)=>{
-    const cover = pickCover(s.photos, i%2===0);
-    return `<section class="act" aria-labelledby="a-${s.id}">
-      <span class="ghost display" aria-hidden="true" data-speed="${i%2?-0.6:0.6}" data-axis="x">${esc(s.titre)}</span>
-      <div class="wrap grid">
-        <div class="frame">${cover?frameImg(s.dir,cover,s.titre,0.22):`<div class="ph" data-speed="0.3"></div><span class="ph-label">Photo à venir · ${esc(s.titre)}</span>`}</div>
-        <div class="body" data-speed="-0.24">
-          <span class="util">${T(s.date)}</span>
-          <h2 id="a-${s.id}" class="display">${titreAff(s.titre)}</h2>
-          <p>${T(s.intro)}</p>
-          <dl class="facts">${s.interv?`<dt>${esc(R.artlabel)}</dt><dd>${T(s.interv)}</dd>`:""}</dl>
-          <a class="more" href="#${key}/${s.id}">Voir la page</a>
-        </div>
-      </div>
-    </section>`; }).join("") + `</div>`;
+    const c = s.photos[0];
+    const ar = c ? c[1]/c[2] : 1.5;
+    return `<a class="tile" style="flex:${ar} 1 ${Math.round(ar*TILEH)}px" href="#${key}/${s.id}" aria-label="${esc(s.titre)}">${c?galImg(s.dir,c,s.titre):`<span class="tph"></span>`}<span class="cap"><b>${titreAff(s.titre)}</b><span>${T(s.date)}</span></span></a>`; }).join("") + `</div>`;
   liste.innerHTML = h;
 }
 
@@ -323,13 +324,13 @@ function renderFiche(key,s){
   const LAYOUT=["wide","","","tall","tall","wide"];
   const pool=ph.map(p=>({p,used:false}));
   const take=portrait=>{ const c=pool.find(x=>!x.used&&(portrait?x.p[2]>x.p[1]:x.p[1]>=x.p[2]))||pool.find(x=>!x.used); c.used=true; return c.p; };
-  const shown=ph.map((_,n)=>{ const cls=LAYOUT[n%LAYOUT.length]; return {cls,p:take(cls==="tall")}; });
-  const gal = ph.length ? `<div class="gallery">` + shown.map((x,n)=>`<figure class="${x.cls}">${galImg(s.dir,x.p,`${s.titre}, photo ${n+1}`)}${zoomBtn(`${s.titre}, photo ${n+1}`)}</figure>`).join("") + `</div>`
+  const shown=ph.map(p=>({cls:"",p}));
+  const gal = ph.length ? `<div class="gallery">` + shown.map((x,n)=>`<figure style="flex:${x.p[1]/x.p[2]} 1 ${Math.round(x.p[1]/x.p[2]*TILEH)}px">${galImg(s.dir,x.p,`${s.titre}, photo ${n+1}`)}${zoomBtn(`${s.titre}, photo ${n+1}`)}</figure>`).join("") + `</div>`
     : `<div class="gallery"><figure class="wide"><div class="ph"></div><span class="ph-label">Photos à venir · ${esc(s.titre)}</span></figure></div>`;
   fiche.innerHTML = `
     <a class="back" href="#${key}">${esc(R.retour)}</a>
-    <header><span class="util">${esc(R.label)}</span><h1 class="display">${titreAff(s.titre)}</h1></header>
-    <div class="intro">
+    <header class="c"><span class="util">${esc(R.label)}</span><h1 class="display">${titreAff(s.titre)}</h1></header>
+    <div class="intro c">
       <p>${T(s.intro)}</p>
       <dl class="facts">
         <dt>Date</dt><dd>${T(s.date)}</dd>
@@ -449,7 +450,7 @@ addEventListener("hashchange", route);
 
 /* Parallaxe (images bornées pour ne jamais découvrir le fond) */
 const reduce = matchMedia("(prefers-reduced-motion: reduce)");
-function parallax(){
+function parallax(){ return;
   if (reduce.matches) return;
   const vh = innerHeight;
   document.querySelectorAll("[data-speed]").forEach(el=>{
