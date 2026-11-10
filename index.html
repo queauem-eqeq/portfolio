@@ -167,6 +167,11 @@ button.zoom:focus-visible{outline:2px solid var(--accent);outline-offset:-4px}
 
 /* Vidéo / archives */
 
+#vmodal{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.7);display:grid;place-items:center;padding:24px}
+#vmodal .vbox{width:min(900px,92vw);aspect-ratio:16/9;background:#000;box-shadow:0 10px 60px rgba(0,0,0,.6)}
+#vmodal iframe{width:100%;height:100%;border:0;display:block}
+#vmodal .vclose{position:absolute;top:14px;right:20px;background:none;border:0;color:#fff;font-size:2.4rem;line-height:1;cursor:pointer;padding:4px 10px}
+#vmodal .vclose:hover{color:var(--accent)}
 .vgrid{list-style:none;margin:0 0 clamp(48px,8vw,120px);padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:clamp(20px,3vw,40px) 24px;border-top:1px solid var(--line);padding-top:clamp(24px,4vw,48px)}
 .vcard{display:flex;flex-direction:column;gap:12px}
 .vth{position:relative;aspect-ratio:16/9;background:#111;overflow:hidden;cursor:pointer;border:0;padding:0;width:100%;display:block}
@@ -383,6 +388,16 @@ function renderAPropos(){
 }
 
 function ytid(u){const m=u.match(/(?:v=|youtu\.be\/|embed\/|shorts\/)([\w-]{11})/);return m?m[1]:""}
+function vOpen(src){
+  const old=document.getElementById("vmodal"); if(old) old.remove();
+  const m=document.createElement("div"); m.id="vmodal"; m.setAttribute("role","dialog"); m.setAttribute("aria-modal","true"); m.setAttribute("aria-label","Lecteur vidéo");
+  m.innerHTML=`<button type="button" class="vclose" aria-label="Fermer">×</button><div class="vbox"><iframe src="${src}" title="Vidéo" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe></div>`;
+  const close=()=>{m.remove();document.removeEventListener("keydown",esc_);document.body.style.overflow=""};
+  const esc_=e=>{if(e.key==="Escape")close()};
+  m.addEventListener("click",e=>{if(!e.target.closest(".vbox"))close()});
+  document.addEventListener("keydown",esc_);
+  document.body.style.overflow="hidden"; document.body.appendChild(m); m.querySelector(".vclose").focus();
+}
 function vidInit(){
   document.querySelectorAll(".vth").forEach(b=>{
     const id=b.dataset.id,img=b.querySelector("img");let t=null,i=0;
@@ -390,12 +405,7 @@ function vidInit(){
       const vid=id.slice(2);
       fetch("https://vimeo.com/api/oembed.json?url="+encodeURIComponent("https://vimeo.com/"+vid)).then(r=>r.json()).then(j=>{if(j.thumbnail_url)img.src=j.thumbnail_url.replace(/_\d+x\d+/,"_1280")}).catch(()=>{});
       b.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();b.click()}});
-      b.addEventListener("click",()=>{
-        document.querySelectorAll(".vth iframe").forEach(f=>{const p=f.parentNode;p.innerHTML=p.dataset.html;});
-        b.dataset.html=b.innerHTML;
-        b.innerHTML=`<iframe src="https://player.vimeo.com/video/${vid}?autoplay=1" title="Vidéo" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
-        b.style.cursor="default";
-      });
+      b.addEventListener("click",()=>vOpen(`https://player.vimeo.com/video/${vid}?autoplay=1`));
       return;
     }
     const fr=["1","2","3"].map(n=>`https://i.ytimg.com/vi/${id}/hq${n}.jpg`);
@@ -403,13 +413,7 @@ function vidInit(){
     const go=()=>{if(t)return;fr.forEach(u=>{new Image().src=u});i=0;t=setInterval(()=>{img.src=fr[i++%3]},650)};
     b.addEventListener("mouseenter",go);b.addEventListener("mouseleave",stop);b.addEventListener("focus",go);b.addEventListener("blur",stop);
     b.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();b.click()}});
-    b.addEventListener("click",()=>{
-      clearInterval(t);
-      document.querySelectorAll(".vth iframe").forEach(f=>{const p=f.parentNode;p.innerHTML=p.dataset.html;});
-      b.dataset.html=b.innerHTML;
-      b.innerHTML=`<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0" title="Vidéo" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`;
-      b.style.cursor="default";
-    },{once:false});
+    b.addEventListener("click",()=>{clearInterval(t);vOpen(`https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0`)});
   });
 }
 function renderVideo(){
