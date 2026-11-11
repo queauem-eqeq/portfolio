@@ -422,7 +422,7 @@ function renderVideo(){
     <h1 class="display" data-speed="0.35">Vidéo</h1>
     <p class="lede">${T(V.intro[0]||"")}</p>
     <div class="meta"><span class="util">${V.films.length} films</span><span class="util">Chaîne YouTube de la Ville</span></div></section>
-    <div class="wrap"><ul class="vgrid">${V.films.map(f=>{const id=ytid(f.url);return `<li class="vcard"><div class="vth" role="button" tabindex="0" data-id="${id}" aria-label="Lire : ${esc(f.titre)}"><img src="https://i.ytimg.com/vi/${id}/hqdefault.jpg" alt="" loading="lazy"><span class="play"></span></div><span class="util">${esc(f.n)}${f.meta?" · "+T(f.meta):""}</span><span class="t">${T(f.titre)}</span>${f.texte?`<p>${T(f.texte)}</p>`:""}<a class="more" href="${esc(f.url)}" target="_blank" rel="noopener">Voir sur YouTube ↗</a></li>`}).join("")}</ul></div>`;
+    <div class="wrap"><ul class="vgrid">${V.films.map(f=>{const id=ytid(f.url);return `<li class="vcard"><div class="vth" role="button" tabindex="0" data-id="${id}" aria-label="Lire : ${esc(f.titre)}"><img src="https://i.ytimg.com/vi/${id}/hqdefault.jpg" alt="" loading="lazy"><span class="play"></span></div><span class="util">${esc(f.n)}${f.meta?" · "+T(f.meta):""}</span><span class="t">${T(f.titre)}</span>${f.texte?`<p>${T(f.texte)}</p>`:""}</li>`}).join("")}</ul></div>`;
   vidInit();
 }
 function renderArchives(){
@@ -432,7 +432,7 @@ function renderArchives(){
     <p class="lede">${T(A.intro[1]||A.intro[0]||"")}</p>
     <div class="meta"><span class="util">${A.projets.length} projets</span></div></section>
     <div class="wrap"><div class="corps" style="margin-left:0;max-width:80ch">${A.intro.slice(2).map(p=>`<p>${T(p)}</p>`).join("")}</div>
-    <ul class="vgrid">${A.projets.map((p,i)=>{ const m=p.match(/^(.*?)(?:\s\((.*?)\))?\s—\s(.*)$/)||[null,p,"",""]; const id=(A.ids||[])[i]||""; const th=id?`<div class="vth" role="button" tabindex="0" data-id="${id}" aria-label="Lire : ${esc(m[1])}"><img src="${id.startsWith("v:")?"":`https://i.ytimg.com/vi/${id}/hqdefault.jpg`}" alt="" loading="lazy"><span class="play"></span></div>`:""; const lk=id.startsWith("v:")?`https://vimeo.com/${id.slice(2)}`:`https://www.youtube.com/watch?v=${id}`; return `<li class="vcard">${th}<span class="util">${String(i+1).padStart(2,"0")}${m[2]?" · "+T(m[2]):""}</span><span class="t">${T(m[1])}</span><p>${T(m[3])}</p>${id?`<a class="more" href="${lk}" target="_blank" rel="noopener">Voir sur ${id.startsWith("v:")?"Vimeo":"YouTube"} ↗</a>`:""}</li>`; }).join("")}</ul></div>`;
+    <ul class="vgrid">${A.projets.map((p,i)=>{ const m=p.match(/^(.*?)(?:\s\((.*?)\))?\s—\s(.*)$/)||[null,p,"",""]; const id=(A.ids||[])[i]||""; const th=id?`<div class="vth" role="button" tabindex="0" data-id="${id}" aria-label="Lire : ${esc(m[1])}"><img src="${id.startsWith("v:")?"":`https://i.ytimg.com/vi/${id}/hqdefault.jpg`}" alt="" loading="lazy"><span class="play"></span></div>`:""; const lk=id.startsWith("v:")?`https://vimeo.com/${id.slice(2)}`:`https://www.youtube.com/watch?v=${id}`; return `<li class="vcard">${th}<span class="util">${String(i+1).padStart(2,"0")}${m[2]?" · "+T(m[2]):""}</span><span class="t">${T(m[1])}</span><p>${T(m[3])}</p></li>`; }).join("")}</ul></div>`;
   vidInit();
 }
 function renderContact(){
