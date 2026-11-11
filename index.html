@@ -167,10 +167,11 @@ button.zoom:focus-visible{outline:2px solid var(--accent);outline-offset:-4px}
 
 /* Vidéo / archives */
 
-#vmodal{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.7);display:grid;place-items:center;padding:24px}
-#vmodal .vbox{width:min(900px,92vw);aspect-ratio:16/9;background:#000;box-shadow:0 10px 60px rgba(0,0,0,.6)}
-#vmodal .vbox.ig{aspect-ratio:auto;width:min(420px,92vw);height:min(88vh,780px);background:#fff}
+#vmodal{position:fixed;inset:0;height:100vh;height:100dvh;overflow:hidden;z-index:500;background:rgba(0,0,0,.7);display:grid;place-items:center;padding:24px}
+#vmodal .vbox{width:min(900px,92vw,calc((100vh - 48px)*16/9));width:min(900px,92vw,calc((100dvh - 48px)*16/9));aspect-ratio:16/9;background:#000;box-shadow:0 10px 60px rgba(0,0,0,.6)}
+#vmodal .vbox.ig{aspect-ratio:auto;width:min(420px,92vw);height:min(88vh,780px);height:min(88dvh,780px);background:#fff}
 .vth.noimg{background:linear-gradient(160deg,var(--ph-a),var(--ph-b))}
+@media (max-height:500px){#vmodal{padding:8px}#vmodal .vbox{width:min(900px,92vw,calc((100dvh - 16px)*16/9))}#vmodal .vbox.ig{height:calc(100dvh - 16px);width:min(420px,92vw)}#vmodal .vclose{top:2px;right:6px;font-size:2rem;z-index:2}}
 #vmodal iframe{width:100%;height:100%;border:0;display:block}
 #vmodal .vclose{position:absolute;top:14px;right:20px;background:none;border:0;color:#fff;font-size:2.4rem;line-height:1;cursor:pointer;padding:4px 10px}
 #vmodal .vclose:hover{color:var(--accent)}
