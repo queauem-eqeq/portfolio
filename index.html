@@ -124,8 +124,9 @@ button.zoom:focus-visible{outline:2px solid var(--accent);outline-offset:-4px}
 .corps{display:grid;gap:1em;max-width:62ch;padding-bottom:40px;margin-left:auto;margin-right:0}
 .corps p{margin:0}.corps ul{margin:0;padding-left:1.1em;display:grid;gap:.5em}
 @media (min-width:900px){.corps{margin-left:calc(100%/12*1)}}
-.gallery,.tiles{display:flex;flex-wrap:wrap;gap:0;margin:0;padding:0}
-.gallery::after,.tiles::after{content:"";flex:1000000 1 0}
+.gallery,.tiles{margin:0;padding:0}
+.grow{display:flex;gap:0;margin:0 auto}
+.grow>*{min-width:0}
 .gallery figure{margin:0;position:relative;overflow:hidden;background:var(--ph-a)}
 .gallery figure.wide,.gallery figure.tall{aspect-ratio:auto}
 .gallery .gimg,.tiles .gimg{display:block;width:100%;height:auto}
@@ -140,7 +141,12 @@ button.zoom:focus-visible{outline:2px solid var(--accent);outline-offset:-4px}
 .fiche .intro.c{display:block;text-align:center;max-width:62ch;margin-inline:auto;padding-block:8px 40px}
 .fiche .intro.c p{max-width:none;font-size:var(--step-0,1rem)}
 .fiche .intro.c .facts{justify-content:center;margin-top:16px;display:inline-grid;text-align:left}
-.fiche .gallery{margin-inline:calc(50% - 50vw);width:100vw}
+.fiche .gallery+.gallery{margin-top:0}
+.fiche .hero-img{margin-block:24px 8px}
+.fiche .hero-img .grow{justify-content:center}
+.fiche .hero-img figure{flex:0 1 auto!important}
+.fiche .hero-img .gimg{width:auto;max-width:100%;max-height:85vh;margin-inline:auto}
+.fiche .gallery.rest{margin-top:8px}
 .pager{display:flex;justify-content:space-between;gap:16px;padding-block:40px;border-top:1px solid var(--line);margin-top:40px}
 .pager a{text-decoration:none;display:grid;gap:4px;min-width:0}
 .pager a:last-child{text-align:right}
@@ -295,7 +301,17 @@ function zoomBtn(alt){ return `<button class="zoom" type="button" aria-label="Ag
 
 /* Liste d'une rubrique */
 const liste=document.getElementById("liste"), fiche=document.getElementById("fiche");
-const TILEH = innerWidth<700 ? 180 : 260;
+const PER = innerWidth<700 ? 2 : 3;
+function rowsHTML(items, per, mk, partial){
+  let h="";
+  for(let i=0;i<items.length;i+=per){
+    const ch=items.slice(i,i+per);
+    const w = partial && ch.length<per ? ` style="max-width:${ch.length/per*100}%;margin-left:0"` : "";
+    h+=`<div class="grow"${w}>`+ch.map(mk).join("")+`</div>`;
+  }
+  return h;
+}
+const arOf=p=>p&&p[2]?p[1]/p[2]:1.5;
 function renderRubrique(key){
   const R=DATA[key];
   const items=R.items;
@@ -306,11 +322,9 @@ function renderRubrique(key){
     <p class="lede">${T(R.lede)}</p>
     <div class="meta"><span class="util">${items.length} pages</span></div>
   </section>
-  <div class="tiles">` +
-  items.map((s,i)=>{
-    const c = s.photos[0];
-    const ar = c ? c[1]/c[2] : 1.5;
-    return `<a class="tile" style="flex:${ar} 1 ${Math.round(ar*TILEH)}px" href="#${key}/${s.id}" aria-label="${esc(s.titre)}">${c?galImg(s.dir,c,s.titre):`<span class="tph"></span>`}<span class="cap"><b>${titreAff(s.titre)}</b><span>${T(s.date)}</span></span></a>`; }).join("") + `</div>`;
+  <div class="wrap"><div class="tiles">` + rowsHTML(items, PER, s=>{
+    const c=s.photos[0], ar=arOf(c);
+    return `<a class="tile" style="flex:${ar} 1 0" href="#${key}/${s.id}" aria-label="${esc(s.titre)}">${c?galImg(s.dir,c,s.titre):`<span class="tph"></span>`}<span class="cap"><b>${titreAff(s.titre)}</b><span>${T(s.date)}</span></span></a>`; }, true) + `</div></div>`;
   liste.innerHTML = h;
 }
 
@@ -327,15 +341,14 @@ function corpsHTML(arr){
 /* Fiche */
 function renderFiche(key,s){
   const R=DATA[key], items=R.items, i=items.indexOf(s), prev=items[i-1], next=items[i+1];
-  const ph=s.photos, rest = ph.length>1 ? ph.slice(1) : ph;
-  const LAYOUT=["wide","","","tall","tall","wide"];
-  const pool=ph.map(p=>({p,used:false}));
-  const take=portrait=>{ const c=pool.find(x=>!x.used&&(portrait?x.p[2]>x.p[1]:x.p[1]>=x.p[2]))||pool.find(x=>!x.used); c.used=true; return c.p; };
-  const shown=ph.map(p=>({cls:"",p}));
-  const gal = ph.length ? `<div class="gallery">` + shown.map((x,n)=>`<figure style="flex:${x.p[1]/x.p[2]} 1 ${Math.round(x.p[1]/x.p[2]*TILEH)}px">${galImg(s.dir,x.p,`${s.titre}, photo ${n+1}`)}${zoomBtn(`${s.titre}, photo ${n+1}`)}</figure>`).join("") + `</div>`
-    : `<div class="gallery"><figure class="wide"><div class="ph"></div><span class="ph-label">Photos à venir · ${esc(s.titre)}</span></figure></div>`;
+  const ph=s.photos;
+  const fig=(p,n)=>`<figure style="flex:${arOf(p)} 1 0">${galImg(s.dir,p,`${s.titre}, photo ${n+1}`)}${zoomBtn(`${s.titre}, photo ${n+1}`)}</figure>`;
+  const heroH = ph.length ? `<div class="gallery hero-img"><div class="grow">${fig(ph[0],0)}</div></div>` : "";
+  const restH = ph.length>1 ? `<div class="gallery rest">${rowsHTML(ph.slice(1).map((p,k)=>[p,k+1]),2,x=>fig(x[0],x[1]),false)}</div>` : "";
+  const shown=ph.map(p=>({p}));
   fiche.innerHTML = `
     <a class="back" href="#${key}">${esc(R.retour)}</a>
+    ${heroH}
     <header class="c"><span class="util">${esc(R.label)}</span><h1 class="display">${titreAff(s.titre)}</h1></header>
     <div class="intro c">
       <p>${T(s.intro)}</p>
@@ -346,7 +359,7 @@ function renderFiche(key,s){
       </dl>
     </div>
     ${s.corps.length?`<div class="corps">${corpsHTML(s.corps)}</div>`:""}
-    ${gal}
+    ${restH}
     <nav class="pager" aria-label="Navigation entre les pages">
       ${prev?`<a href="#${key}/${prev.id}"><span class="util">← Plus récent</span><span class="t">${esc(prev.titre)}</span></a>`:`<span></span>`}
       ${next?`<a href="#${key}/${next.id}"><span class="util">Plus ancien →</span><span class="t">${esc(next.titre)}</span></a>`:`<span></span>`}
